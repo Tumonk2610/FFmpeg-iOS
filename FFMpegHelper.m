@@ -30,11 +30,14 @@
 }
 
 -(void)playWithFile:(NSString *)file{
-    [self releaseFFMPEG];
+    if(!isStop){
+        [self releaseFFMPEG];
+    }
+   
     [self initFFMPEG:file];
     inpf = fopen([file UTF8String],"rb");
     Buf = (unsigned char*)calloc ( 1000000, sizeof(char));
-
+    isStop=false;
     if(timer==nil)
         timer=[NSTimer scheduledTimerWithTimeInterval:1.0/30
                                                target:self
@@ -44,6 +47,9 @@
 }
 
 -(void)stop{
+    isStop=true;
+    [timer invalidate];
+    timer=nil;
     [self releaseFFMPEG];
 }
 
@@ -124,7 +130,7 @@ initError : {
     int nallen;
     nallen=[self getNextNal:Buf];
     pRawFrame = av_frame_alloc ();
-    if(nallen>0)
+    if(nallen>0&&!isStop)
         if([self decodeH264:Buf length:nallen]>0)
             if (pRawFrame->data[0]) {
                 [self convertFrameToRGB];
